@@ -10,7 +10,10 @@ Pygame, Начальное взаимодействие с программой 
 
 Для ее запуска необходимо выполнить:
 
-{python} {pip install pygame}
-{python} {pip install tkinter}
+"'python
+pip install pygame
+pip install tkinter
+"'
+
 
 (Программа писалась, когда я только начинал изучение Python и не имел понятия как продумывать архитектуру проекта, поэтому реализованна в 1 файле
