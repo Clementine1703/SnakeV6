@@ -3,7 +3,7 @@ import pygame
 import tkinter as tk
 import copy
 from tkinter.ttk import *
-from settings import snake_start_settings
+from settings import get_snake_start_settings
 
 
 class Game():
@@ -186,12 +186,6 @@ class Game():
 
                 return True
 
-            def game_quit(self):  # конец игры
-                nonlocal running
-                running = False
-                # raise Exception('чтобы tkinter не завис!')
-                # self.restart()
-
             def snake_event_check(self):  # отслеживавем нажатие клавиш
                 if self.upr == 1:
 
@@ -293,8 +287,8 @@ class Game():
             def delete_apple(self):
                 del self
 
-        snake = Snake(copy.deepcopy(snake_start_settings['1']))
-        snake1 = Snake(copy.deepcopy(snake_start_settings['2']))
+        snake = Snake(copy.deepcopy(get_snake_start_settings()['1']))
+        snake1 = Snake(copy.deepcopy(get_snake_start_settings()['2']))
         snakes_list = [snake, snake1]
 
         game_paused = False
@@ -326,8 +320,8 @@ class Game():
                         
                         del snake
                         del snake1
-                        snake = Snake(copy.deepcopy(snake_start_settings['1']))
-                        snake1 = Snake(copy.deepcopy(snake_start_settings['2']))
+                        snake = Snake(copy.deepcopy(get_snake_start_settings()['1']))
+                        snake1 = Snake(copy.deepcopy(get_snake_start_settings()['2']))
                         snakes_list = [snake, snake1]
                         del apple
                         apple = Apple()
@@ -377,3 +371,7 @@ class Game():
 
         pygame.display.quit()
         pygame.quit()
+
+    def game_quit(self):  # конец игры
+                nonlocal running
+                running = False

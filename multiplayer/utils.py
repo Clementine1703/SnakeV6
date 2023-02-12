@@ -1,5 +1,6 @@
 import os
 import re
+import socket
 
 
 def get_ip_list():
@@ -13,7 +14,10 @@ def get_ip_list():
     except:
         return ('Не получилось определить ip адреса в вашей сети, введите вручную')
 
-
+def get_my_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
 
 
 

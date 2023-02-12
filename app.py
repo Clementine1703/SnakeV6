@@ -1,207 +1,160 @@
-import random
-import pygame
-from functools import partial
-
+import pickle
+import socket
 import tkinter as tk
+from functools import partial
 from tkinter.ttk import *
+from multiplayer import server, utils
+from form_tools.form_constructors import create_button, create_checkbutton, create_combobox
+from form_tools.form_synchronizators import syncing_setting_with_input
+
 from settings import *
 from game import Game
-from multiplayer import utils
 
 
-class App(tk.Tk):
+class Menu(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.geometry('300x300')
+        self.geometry('300x300') # размеры окна настроек
         self.title('Змеюка')
-        self.resizable(width=False, height=False)
+        self.resizable(width=False, height=False)   # запрет на изменение размера окна
         self.lbl = tk.Label(text='Главное меню', font='Arial 14', pady=30, ).pack()
         self.buttons = {}
 
-        self.create_button(
-            active_settings={
-                'button_name': 'start',
-                'tk_object': self,
-                'text': "Играть",
-                'function': partial(Game.start, active_settings),
-            }
+        create_button(
+                menu= self,
+                button_name= 'start',
+                menu_window= self,
+                text= "Играть",
+                function= partial(Game.start, active_settings),
         )
 
-        self.create_button(
-            active_settings={
-                'button_name': 'settings',
-                'tk_object': self,
-                'text': "Настройки",
-                'function': self.open_options,
-            }
+        create_button(
+                menu= self,
+                menu_window= self,
+                button_name= 'settings',
+                text= "Настройки",
+                function= self.open_options_window,
         )
 
-        self.create_button(
-            active_settings={
-                'button_name': 'multiplayer',
-                'tk_object': self,
-                'text': "Игра по сети",
-                'function': self.open_multiplayer,
-            }
+        create_button(
+                menu=self,
+                menu_window=self,
+                button_name='multiplayer',
+                text="Игра по сети",
+                function=self.open_multiplayer_window,
         )
 
 
-    def open_options(self):
+    def open_options_window(self):
         options = tk.Tk()  # создаем новое окно tkinter
-        options.geometry('400x400')  # размеры окна настроек
+        options.geometry('400x400')  
         options.title('Настройки')
-        options.resizable(width=False, height=False)  # запрет изменять размер
+        options.resizable(width=False, height=False)
         self.forms_storage = {}
 
-        # создаем поле для каждой настройки
-        self.create_combobox(options, label_text='Размер карты', setting_name='arena_size', coordinates={
-            'lbl': (20, 60),
-            'combobox': (110, 60),
-        })
+        # создаем и рисуем все поля раздела "настройки"
+        for form_element in data_for_generating_settings_fields['combobox']:
+            if form_element['type'] == 'combobox':
+                create_combobox(self, menu_window=options, label_text=form_element['label_text'], setting_name=form_element['setting_name'], coordinates=form_element['coordinates'])
+            else:
+                create_checkbutton(self, menu_window=options, label_text=form_element['label_text'], setting_name=form_element['setting_name'], coordinates=form_element['coordinates'])
 
-        self.create_combobox(options, label_text='Скорость:', setting_name='speed', coordinates={
-            'lbl': (20, 95),
-            'combobox': (110, 95),
-        })
 
-        self.create_combobox(options, label_text='Столкновения:', setting_name='crush', coordinates={
-            'lbl': (20, 130),
-            'combobox': (110, 130),
-        })
 
-        self.create_combobox(options, label_text='Счет для победы: ', setting_name='score_winning', coordinates={
-            'lbl': (20, 165),
-            'combobox': (120, 165),
-        })
-
-        self.create_checkbutton(options, label_text='Большое яблоко', setting_name='apple_big', coordinates={
-            'checkbutton': (20, 200)
-        })
-
-        self.create_checkbutton(options, label_text='Случ. размер яблока после съедания', setting_name='apple_random_size', coordinates={
-            'checkbutton': (20, 230)
-        })
-
-        # выставляем значения input в соответствии с нынешними настройками
-
-        self.create_button(
-            active_settings={
-                'button_name': 'save_options',
-                'tk_object': options,
-                'text': "Сохранить",
-                'function': partial(self.change_options, options),
-            }
+        create_button(
+                menu= self,
+                menu_window= options,
+                button_name= 'save_options',
+                text= "Сохранить",
+                function= partial(self.change_options, options),
         )
 
-        # отрисовываем все элементы
-
-
-    def change_options(self, tk_object):
+    def change_options(self, menu_window):
         global active_settings
 
-        # устанавливаем значение настроек в соответствии с выбранным значением в инпуте
-        self.syncing_setting_with_input(setting_name='arena_size', type='combobox')
-        self.syncing_setting_with_input(setting_name='speed', type='combobox')
-        self.syncing_setting_with_input(setting_name='crush', type='combobox')
-        self.syncing_setting_with_input(setting_name='score_winning', type='combobox')
+        # синхронизируем значение active_settings со значением инпута
+        for form_element in data_for_generating_settings_fields['combobox']:
+            syncing_setting_with_input(self, setting_name=form_element['setting_name'], type=form_element['type'])
 
-        self.syncing_setting_with_input(setting_name='apple_big', type='checkbutton')
-        self.syncing_setting_with_input(setting_name='apple_random_size', type='checkbutton')
+        menu_window.destroy()
 
-        tk_object.destroy()
-        
-    def create_button(self, active_settings):
-        # создает и возвращает объект кнопки
 
-        self.buttons[active_settings['button_name']] = tk.Button(active_settings['tk_object'], text=active_settings['text'],  # текст кнопки
-                           width='10',
-                           background="#fff",  # фоновый цвет кнопки
-                           foreground="#000",  # цвет текста
-                           padx="12",  # отступ от границ до содержимого по горизонтали
-                           pady="6",  # отступ от границ до содержимого по вертикали
-                           font="Arial 10",  # высота шрифта
-                           relief='raised',
-                           command=active_settings['function']
-                           )
-
-        self.buttons[active_settings['button_name']].pack(pady=5)
-
-    def create_combobox(self, tk_object, label_text, setting_name, coordinates):
-        self.forms_storage[setting_name] = {
-            'lbl': Label(tk_object, text=label_text),
-            'combobox': Combobox(tk_object, state='readonly')
-        } 
-        self.forms_storage[setting_name]['combobox']['values'] = get_setting_titles(
-            all_settings[setting_name])
-
-        self.forms_storage[setting_name]['lbl'].place(x=coordinates['lbl'][0], y=coordinates['lbl'][1])
-        self.forms_storage[setting_name]['combobox'].place(x=coordinates['combobox'][0], y=coordinates['combobox'][1])
-
-        self.syncing_input_with_setting(setting_name, type='combobox')
-
-    def create_checkbutton(self, tk_object, label_text, setting_name, coordinates):
-        self.forms_storage[setting_name] = {}
-        self.forms_storage[setting_name]['checkbutton_variable'] = tk.IntVar(tk_object)
-        self.forms_storage[setting_name]['checkbutton'] = Checkbutton(tk_object, text=label_text,
-                                      variable=self.forms_storage[setting_name]['checkbutton_variable'],
-                                      onvalue=1, offvalue=0,
-                                      )
-
-        self.forms_storage[setting_name]['checkbutton'].place(x=coordinates['checkbutton'][0], y=coordinates['checkbutton'][1])
-
-        self.syncing_input_with_setting(setting_name, type='checkbutton')
-
-    def syncing_input_with_setting(self, setting_name, type):
-        # устанавливает значение инпутов в соответствии с значением настроек
-
-        global active_settings
-        global all_settings
-
-        if type == 'combobox':
-            self.forms_storage[setting_name]['combobox'].current(
-            get_setting_index_by_value(
-                (active_settings[setting_name]),
-                all_settings[setting_name]
-            )
-        )
-        elif type == 'checkbutton':
-            self.forms_storage[setting_name]['checkbutton_variable'].set(
-            int(get_setting_index_by_value(
-                active_settings[setting_name],
-                all_settings[setting_name]
-                )
-            )
-        )
-
-    def syncing_setting_with_input(self, setting_name, type):
-        if type == 'combobox':
-            active_settings[setting_name] = get_setting_value_by_title(
-            self.forms_storage[setting_name]['combobox'].get(),
-            all_settings[setting_name]
-            )
-        elif type == 'checkbutton':
-            active_settings[setting_name] = bool(int(self.forms_storage[setting_name]['checkbutton_variable'].get()))
-
-    def open_multiplayer(self):
-        multiplayer = tk.Tk()  # создаем новое окно tkinter
-        multiplayer.geometry('400x400')  # размеры окна настроек
+    def open_multiplayer_window(self):
+        multiplayer = tk.Tk()
+        multiplayer.geometry('400x400') 
         multiplayer.title('Игра по сети')
-        multiplayer.resizable(width=False, height=False)  # запрет изменять размер
+        multiplayer.resizable(width=False, height=False)
 
         ip_input_lbl = Label(multiplayer, text='Введите ip адрес')
-        ip_input = tk.Entry(multiplayer)
         ip_input_lbl.pack(padx=8, pady= 8)
+        ip_input = tk.Entry(multiplayer)
         ip_input.pack()
+
+
+
+        create_button(
+                menu= self,
+                menu_window= multiplayer,
+                button_name= 'connect_to_host',
+                text= "Подключиться",
+                function= partial(self.connect_to_host, ip_input.get()),
+        )
 
         ip_list_area = tk.Text(multiplayer ,width=25, height=5, bg="white",
             fg='black')
         ip_list_area.pack()
 
+
         ip_list = utils.get_ip_list()
         if type(ip_list) == list:
             ip_list_area.insert("1.0", f'ip адресы: \n{ip_list}')
 
+        
+        create_button(
+                menu= self,
+                menu_window= multiplayer,
+                button_name= 'become_a_host',
+                text= "Стать хостом",
+                function= self.open_wait_for_connection_window,
+        )
+
+    def connect_to_host(self, ip_address):
+        sock = socket.socket()
+        sock.connect((ip_address, 12341))
+        print('connected')
+
+        data = sock.recv(1024)
+        if not data:
+                pass
+        data = pickle.loads(data)
+        if (data['command'] == 'start'):
+            Game.start(active_settings)
+
+    def open_wait_for_connection_window(self):
+        wait_for_connection = tk.Tk()
+        wait_for_connection.geometry('300x150')
+        wait_for_connection.title('Ожидание 2-го игрока')
+        wait_for_connection.resizable(width=False, height=False)
+
+        ip_show_lbl = Label(wait_for_connection, text=utils.get_my_ip())
+        ip_show_lbl.pack(padx=8, pady= 8)
+
+        server.Server()
+
+        sock = socket.socket()
+        sock.connect(('127.0.0.1', 12341))
+        print('connected')
+
+        data = sock.recv(1024)
+        if not data:
+                pass
+        data = pickle.loads(data)
+        if (data['command'] == 'start'):
+            Game.start(active_settings)
+
+        
+
 
 if __name__ == '__main__':
-    app = App()
+    app = Menu()
     app.mainloop()
