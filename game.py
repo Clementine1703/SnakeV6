@@ -298,6 +298,7 @@ class Game():
         game_paused = False
 
         def pause_switch():  # ставим паузу
+
             nonlocal screen
             nonlocal game_paused
             nonlocal current_speed
@@ -307,6 +308,21 @@ class Game():
             else:
                 current_speed = active_settings['speed']
                 game_paused = False
+
+        def restart_game():
+            global snakes_list
+            global current_speed
+
+
+            del snake
+            del snake1
+            snake = Snake(copy.deepcopy(get_snake_start_settings()['1']))
+            snake1 = Snake(copy.deepcopy(get_snake_start_settings()['2']))
+            snakes_list = [snake, snake1]
+            del apple
+            apple = Apple()
+
+            current_speed = active_settings['speed']
 
         apple = Apple()
 
@@ -321,16 +337,8 @@ class Game():
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
-                        
-                        del snake
-                        del snake1
-                        snake = Snake(copy.deepcopy(get_snake_start_settings()['1']))
-                        snake1 = Snake(copy.deepcopy(get_snake_start_settings()['2']))
-                        snakes_list = [snake, snake1]
-                        del apple
-                        apple = Apple()
+                        restart_game()
 
-                        current_speed = active_settings['speed']
                     if event.key == pygame.K_p:  # ставим паузу
                         pause_switch()
 
@@ -375,4 +383,3 @@ class Game():
 
         pygame.display.quit()
         pygame.quit()
-
