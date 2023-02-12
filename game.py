@@ -238,6 +238,10 @@ class Game():
                 screen.blit(font_score.render(
                     f'{self.score}', True, self.color), (x, y))
 
+            def game_quit(self):  # конец игры
+                nonlocal running
+                running = False
+
         class Apple:
             def __init__(self):
 
@@ -372,6 +376,3 @@ class Game():
         pygame.display.quit()
         pygame.quit()
 
-    def game_quit(self):  # конец игры
-                nonlocal running
-                running = False
