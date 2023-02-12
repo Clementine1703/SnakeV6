@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter.ttk import *
 from settings import *
 from game import Game
+from multiplayer import utils
 
 
 class App(tk.Tk):
@@ -14,28 +15,36 @@ class App(tk.Tk):
         self.geometry('300x300')
         self.title('Змеюка')
         self.resizable(width=False, height=False)
+        self.lbl = tk.Label(text='Главное меню', font='Arial 14', pady=30, ).pack()
+        self.buttons = {}
 
-        self.lbl = tk.Label(text='Главное меню', font='Arial 14', pady=30, )
-        self.lbl.pack()
-
-        self.btn_start = self.create_button(
+        self.create_button(
             active_settings={
+                'button_name': 'start',
                 'tk_object': self,
                 'text': "Играть",
                 'function': partial(Game.start, active_settings),
             }
         )
 
-        self.btn_settings = self.create_button(
+        self.create_button(
             active_settings={
+                'button_name': 'settings',
                 'tk_object': self,
                 'text': "Настройки",
                 'function': self.open_options,
             }
         )
 
-        self.btn_start.pack()
-        self.btn_settings.pack(pady=5)
+        self.create_button(
+            active_settings={
+                'button_name': 'multiplayer',
+                'tk_object': self,
+                'text': "Игра по сети",
+                'function': self.open_multiplayer,
+            }
+        )
+
 
     def open_options(self):
         options = tk.Tk()  # создаем новое окно tkinter
@@ -43,9 +52,6 @@ class App(tk.Tk):
         options.title('Настройки')
         options.resizable(width=False, height=False)  # запрет изменять размер
         self.forms_storage = {}
-
-        options.lbl = tk.Label(options, text='Настройки',
-                               font='Arial', pady=15).place(x=95)
 
         # создаем поле для каждой настройки
         self.create_combobox(options, label_text='Размер карты', setting_name='arena_size', coordinates={
@@ -78,18 +84,19 @@ class App(tk.Tk):
 
         # выставляем значения input в соответствии с нынешними настройками
 
-        button_save = self.create_button(
+        self.create_button(
             active_settings={
+                'button_name': 'save_options',
                 'tk_object': options,
                 'text': "Сохранить",
-                'function': self.change_options,
+                'function': partial(self.change_options, options),
             }
         )
 
         # отрисовываем все элементы
-        button_save.place(x=20, y=270)
 
-    def change_options(self):
+
+    def change_options(self, tk_object):
         global active_settings
 
         # устанавливаем значение настроек в соответствии с выбранным значением в инпуте
@@ -101,11 +108,12 @@ class App(tk.Tk):
         self.syncing_setting_with_input(setting_name='apple_big', type='checkbutton')
         self.syncing_setting_with_input(setting_name='apple_random_size', type='checkbutton')
 
-
+        tk_object.destroy()
+        
     def create_button(self, active_settings):
         # создает и возвращает объект кнопки
 
-        button = tk.Button(active_settings['tk_object'], text=active_settings['text'],  # текст кнопки
+        self.buttons[active_settings['button_name']] = tk.Button(active_settings['tk_object'], text=active_settings['text'],  # текст кнопки
                            width='10',
                            background="#fff",  # фоновый цвет кнопки
                            foreground="#000",  # цвет текста
@@ -115,7 +123,8 @@ class App(tk.Tk):
                            relief='raised',
                            command=active_settings['function']
                            )
-        return button
+
+        self.buttons[active_settings['button_name']].pack(pady=5)
 
     def create_combobox(self, tk_object, label_text, setting_name, coordinates):
         self.forms_storage[setting_name] = {
@@ -172,6 +181,26 @@ class App(tk.Tk):
             )
         elif type == 'checkbutton':
             active_settings[setting_name] = bool(int(self.forms_storage[setting_name]['checkbutton_variable'].get()))
+
+    def open_multiplayer(self):
+        multiplayer = tk.Tk()  # создаем новое окно tkinter
+        multiplayer.geometry('400x400')  # размеры окна настроек
+        multiplayer.title('Игра по сети')
+        multiplayer.resizable(width=False, height=False)  # запрет изменять размер
+
+        ip_input_lbl = Label(multiplayer, text='Введите ip адрес')
+        ip_input = tk.Entry(multiplayer)
+        ip_input_lbl.pack(padx=8, pady= 8)
+        ip_input.pack()
+
+        ip_list_area = tk.Text(multiplayer ,width=25, height=5, bg="white",
+            fg='black')
+        ip_list_area.pack()
+
+        ip_list = utils.get_ip_list()
+        if type(ip_list) == list:
+            ip_list_area.insert("1.0", f'ip адресы: \n{ip_list}')
+
 
 if __name__ == '__main__':
     app = App()

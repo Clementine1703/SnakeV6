@@ -129,7 +129,6 @@ all_settings = {
 
 def get_setting_titles(setting_objects):
     values = [value['title'] for value in setting_objects]
-    print(values)
     return values
 
 def get_setting_value_by_title(title, setting_objects):
