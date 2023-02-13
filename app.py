@@ -136,7 +136,10 @@ class Menu(tk.Tk):
             global active_settings
 
             active_settings = data
-            Game.start(active_settings)
+            Game.start(active_settings, multiplayer = {
+                'role': 'client',
+                'socket': sock,
+            })
 
     def open_wait_for_connection_window(self):
         wait_for_connection = tk.Tk()
@@ -159,7 +162,10 @@ class Menu(tk.Tk):
         data = pickle.loads(data)
         if (data['command'] == 'start'):
             sock.send(pickle.dumps(active_settings))
-            Game.start(active_settings)
+            Game.start(active_settings, multiplayer = {
+                'role': 'host',
+                'socket': sock,
+            })
 
         
 
