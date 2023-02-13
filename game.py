@@ -291,8 +291,8 @@ class Game():
             def delete_apple(self):
                 del self
 
-        snake = Snake(copy.deepcopy(get_snake_start_settings()['1']))
-        snake1 = Snake(copy.deepcopy(get_snake_start_settings()['2']))
+        snake = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['1']))
+        snake1 = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['2']))
         snakes_list = [snake, snake1]
 
         game_paused = False
@@ -316,8 +316,8 @@ class Game():
 
             del snake
             del snake1
-            snake = Snake(copy.deepcopy(get_snake_start_settings()['1']))
-            snake1 = Snake(copy.deepcopy(get_snake_start_settings()['2']))
+            snake = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['1']))
+            snake1 = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['2']))
             snakes_list = [snake, snake1]
             del apple
             apple = Apple()

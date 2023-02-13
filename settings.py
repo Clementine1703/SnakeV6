@@ -13,7 +13,7 @@ active_settings = {
 }
 
 
-def get_snake_start_settings():
+def get_snake_start_settings(active_settings):
     return {
         '1': {'coordinates': [[0, 2], [0, 1], [0, 0]], 'side': 'bottom', 'control': 1, 'color': active_settings['colors']['SNAKE'], 'name': 'ЗЕЛЁНАЯ змеюка'},
         '2': {'coordinates': [[active_settings['arena_size'][0] / active_settings['cell_size'] - 1, active_settings['arena_size'][1] / active_settings['cell_size'] - 3], [active_settings['arena_size'][0] / active_settings['cell_size'] - 1, active_settings['arena_size'][1] / active_settings['cell_size'] - 2], [active_settings['arena_size'][0] / active_settings['cell_size'] - 1, active_settings['arena_size'][1] / active_settings['cell_size'] - 1]], 'side': 'top', 'control': 2, 'color': active_settings['colors']['FIOLET'],

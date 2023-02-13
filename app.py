@@ -53,7 +53,7 @@ class Menu(tk.Tk):
         self.forms_storage = {}
 
         # создаем и рисуем все поля раздела "настройки"
-        for form_element in data_for_generating_settings_fields['combobox']:
+        for form_element in data_for_generating_settings_fields:
             if form_element['type'] == 'combobox':
                 create_combobox(self, menu_window=options, label_text=form_element['label_text'], setting_name=form_element['setting_name'], coordinates=form_element['coordinates'])
             else:
@@ -73,7 +73,7 @@ class Menu(tk.Tk):
         global active_settings
 
         # синхронизируем значение active_settings со значением инпута
-        for form_element in data_for_generating_settings_fields['combobox']:
+        for form_element in data_for_generating_settings_fields:
             syncing_setting_with_input(self, setting_name=form_element['setting_name'], type=form_element['type'])
 
         menu_window.destroy()
@@ -128,6 +128,14 @@ class Menu(tk.Tk):
                 pass
         data = pickle.loads(data)
         if (data['command'] == 'start'):
+            data = sock.recv(1024)
+            if not data:
+                pass
+            data = pickle.loads(data)
+
+            global active_settings
+
+            active_settings = data
             Game.start(active_settings)
 
     def open_wait_for_connection_window(self):
@@ -150,6 +158,7 @@ class Menu(tk.Tk):
                 pass
         data = pickle.loads(data)
         if (data['command'] == 'start'):
+            sock.send(pickle.dumps(active_settings))
             Game.start(active_settings)
 
         

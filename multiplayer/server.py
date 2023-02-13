@@ -20,6 +20,9 @@ class Server():
         connect_host.send(pickle.dumps(some_data))
         connect_client.send(pickle.dumps(some_data))
 
+        data_for_client = connect_host.recv(1024)
+        connect_client.send(data_for_client)
+
         print(
         f'''
         ip хоста: {addres_host}

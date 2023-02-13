@@ -1,5 +1,0 @@
-screen = ''
-clock = ''
-font_score = ''
-font_gameover = ''
-current_speed = ''
