@@ -10,7 +10,7 @@ class Server():
     def run(self):
         global socket
         server_socket = socket.socket()
-        server_socket.bind(('', 12341))
+        server_socket.bind(('', 8887))
         server_socket.listen(1)
         connect_host, addres_host = server_socket.accept()
         connect_client, addres_client = server_socket.accept()

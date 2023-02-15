@@ -113,7 +113,7 @@ class Menu(tk.Tk):
 
     def connect_to_host(self, ip_address):
         socket_client = socket.socket()
-        socket_client.connect((ip_address, 12341))
+        socket_client.connect((ip_address, 8887))
         print('connected')
 
         data =  socket_client.recv(1024)
@@ -149,7 +149,7 @@ class Menu(tk.Tk):
         exchanger_server = server.Server()
 
         socket_host = socket.socket()
-        socket_host.connect(('127.0.0.1', 12341))
+        socket_host.connect(('127.0.0.1', 8887))
         print('connected')
 
 
