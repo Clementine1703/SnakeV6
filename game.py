@@ -3,12 +3,13 @@ import pygame
 import tkinter as tk
 import copy
 from tkinter.ttk import *
-from settings import snake_start_settings
+from settings import get_snake_start_settings
+from multiplayer.utils import make_server_request
 
 
 class Game():
 
-    def start(active_settings):
+    def start(active_settings, multiplayer=False):
         pygame.init()
         pygame.font.init()
         screen = pygame.display.set_mode(
@@ -152,6 +153,11 @@ class Game():
                         return self.gameover(type='score')
 
             def gameover(self, type, no_winner=False):
+                if multiplayer:
+                    global mp_restart
+                    print("Рестарт разрешен")
+                    mp_restart = True
+
                 nonlocal current_speed
 
                 # окно будет обновляться каждую 999999999 секунду, то есть зависнет (типа конец игры)
@@ -185,12 +191,6 @@ class Game():
                                 (active_settings['arena_size'][0] / 2 - 40, active_settings['arena_size'][1] / 2 - 160))
 
                 return True
-
-            def game_quit(self):  # конец игры
-                nonlocal running
-                running = False
-                # raise Exception('чтобы tkinter не завис!')
-                # self.restart()
 
             def snake_event_check(self):  # отслеживавем нажатие клавиш
                 if self.upr == 1:
@@ -244,6 +244,10 @@ class Game():
                 screen.blit(font_score.render(
                     f'{self.score}', True, self.color), (x, y))
 
+            def game_quit(self):  # конец игры
+                nonlocal running
+                running = False
+
         class Apple:
             def __init__(self):
 
@@ -293,13 +297,16 @@ class Game():
             def delete_apple(self):
                 del self
 
-        snake = Snake(copy.deepcopy(snake_start_settings['1']))
-        snake1 = Snake(copy.deepcopy(snake_start_settings['2']))
-        snakes_list = [snake, snake1]
+        snake_host = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['1']))
+        snake_client = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['2']))
+        snakes_list = [snake_host, snake_client]
 
         game_paused = False
 
         def pause_switch():  # ставим паузу
+            if multiplayer:
+                return 0
+
             nonlocal screen
             nonlocal game_paused
             nonlocal current_speed
@@ -310,6 +317,67 @@ class Game():
                 current_speed = active_settings['speed']
                 game_paused = False
 
+        def restart_game():
+            global mp_restart
+
+            if multiplayer:
+                if mp_restart:
+                    print('должен произойти рестарт')
+                else:
+                    return 0
+
+
+            nonlocal snake_host
+            nonlocal snake_client
+            nonlocal apple
+            nonlocal snakes_list
+            nonlocal current_speed
+
+
+            del snake_host
+            del snake_client
+            snake_host = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['1']))
+            snake_client = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['2']))
+            snakes_list = [snake_host, snake_client]
+            del apple
+            apple = Apple()
+
+            current_speed = active_settings['speed']
+
+            if multiplayer:
+                mp_restart = False
+
+
+        if multiplayer:
+            mp_restart = False
+        def make_multiplayer_data_exchange():
+            multiplayer_data = {
+                'host': 
+                    {
+                    'role': multiplayer['role'],
+                    'snake_pside': snake_host.pside,
+                    'apple_coords': apple.coordinates,
+                    'apple_big': active_settings['apple_big'],
+                    }
+                ,
+                'client': 
+                    {
+                    'role': multiplayer['role'],
+                    'snake_pside': snake_client.pside,
+                    }
+                
+
+            }
+
+            response_data = make_server_request(multiplayer['socket'], multiplayer_data[multiplayer['role']])
+            if multiplayer['role'] == 'host':
+                snake_client.pside = response_data.get('snake_pside')
+            else:
+                snake_host.pside = response_data.get('snake_pside')
+                apple.coordinates = response_data.get('apple_coords')
+                active_settings['apple_big'] = response_data.get('apple_big')
+
+        
         apple = Apple()
 
         while running:
@@ -323,41 +391,36 @@ class Game():
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
-                        
-                        del snake
-                        del snake1
-                        snake = Snake(copy.deepcopy(snake_start_settings['1']))
-                        snake1 = Snake(copy.deepcopy(snake_start_settings['2']))
-                        snakes_list = [snake, snake1]
-                        del apple
-                        apple = Apple()
+                        restart_game()
 
-                        current_speed = active_settings['speed']
                     if event.key == pygame.K_p:  # ставим паузу
                         pause_switch()
 
-                snake.snake_event_check()
-                snake1.snake_event_check()
+                snake_host.snake_event_check()
+                snake_client.snake_event_check()
 
             # кадров в секунду 30, но змейка будет двигаться каждый 5й кадр
-            if snake.kadr % current_speed == 0:
-                snake.apply_side_edit()
-                snake1.apply_side_edit()
-                snake.one_step()
-                snake1.one_step()
-                snake.draw_snake()
-                snake1.draw_snake()
-                if not snake.snake_crush_check():  # что
-                    snake1.snake_crush_check()
-                elif snake.snake_crush_check(test=True) and snake1.snake_crush_check(test=True):
-                    pass
-                snake.show_score(20, 10)
-                snake1.show_score(active_settings['arena_size'][0] - 40, 10)
-                if not snake.score_winner_check():
-                    snake1.score_winner_check()
+            if snake_host.kadr % current_speed == 0:
+                if multiplayer:
+                    make_multiplayer_data_exchange()
 
-                if (snake.apple_eat_check(its_a_test=True) != 0) and (
-                        snake1.apple_eat_check(
+                snake_host.apply_side_edit()
+                snake_client.apply_side_edit()
+                snake_host.one_step()
+                snake_client.one_step()
+                snake_host.draw_snake()
+                snake_client.draw_snake()
+                if not snake_host.snake_crush_check():  # что
+                    snake_client.snake_crush_check()
+                elif snake_host.snake_crush_check(test=True) and snake_client.snake_crush_check(test=True):
+                    pass
+                snake_host.show_score(20, 10)
+                snake_client.show_score(active_settings['arena_size'][0] - 40, 10)
+                if not snake_host.score_winner_check():
+                    snake_client.score_winner_check()
+
+                if (snake_host.apple_eat_check(its_a_test=True) != 0) and (
+                        snake_client.apple_eat_check(
                             its_a_test=True) != 0):  # я в шоке чтобы если два съели оба наелись если не два то 1 наелся
                     for i in snakes_list:
                         i.score += i.apple_eat_check()
@@ -373,7 +436,7 @@ class Game():
                 apple.draw_apple()
                 pygame.display.flip()
 
-            snake.kadr += 1
+            snake_host.kadr += 1
 
         pygame.display.quit()
         pygame.quit()
