@@ -244,10 +244,6 @@ class Game():
                 screen.blit(font_score.render(
                     f'{self.score}', True, self.color), (x, y))
 
-            def game_quit(self):  # конец игры
-                nonlocal running
-                running = False
-
         class Apple:
             def __init__(self):
 
@@ -297,8 +293,10 @@ class Game():
             def delete_apple(self):
                 del self
 
-        snake_host = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['1']))
-        snake_client = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['2']))
+        snake_host = Snake(copy.deepcopy(
+            get_snake_start_settings(active_settings)['1']))
+        snake_client = Snake(copy.deepcopy(
+            get_snake_start_settings(active_settings)['2']))
         snakes_list = [snake_host, snake_client]
 
         game_paused = False
@@ -326,18 +324,18 @@ class Game():
                 else:
                     return 0
 
-
             nonlocal snake_host
             nonlocal snake_client
             nonlocal apple
             nonlocal snakes_list
             nonlocal current_speed
 
-
             del snake_host
             del snake_client
-            snake_host = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['1']))
-            snake_client = Snake(copy.deepcopy(get_snake_start_settings(active_settings)['2']))
+            snake_host = Snake(copy.deepcopy(
+                get_snake_start_settings(active_settings)['1']))
+            snake_client = Snake(copy.deepcopy(
+                get_snake_start_settings(active_settings)['2']))
             snakes_list = [snake_host, snake_client]
             del apple
             apple = Apple()
@@ -347,29 +345,29 @@ class Game():
             if multiplayer:
                 mp_restart = False
 
-
         if multiplayer:
             mp_restart = False
+
         def make_multiplayer_data_exchange():
             multiplayer_data = {
-                'host': 
+                'host':
                     {
-                    'role': multiplayer['role'],
-                    'snake_pside': snake_host.pside,
-                    'apple_coords': apple.coordinates,
-                    'apple_big': active_settings['apple_big'],
-                    }
-                ,
-                'client': 
+                        'role': multiplayer['role'],
+                        'snake_pside': snake_host.pside,
+                        'apple_coords': apple.coordinates,
+                        'apple_big': active_settings['apple_big'],
+                    },
+                'client':
                     {
-                    'role': multiplayer['role'],
-                    'snake_pside': snake_client.pside,
+                        'role': multiplayer['role'],
+                        'snake_pside': snake_client.pside,
                     }
-                
+
 
             }
 
-            response_data = make_server_request(multiplayer['socket'], multiplayer_data[multiplayer['role']])
+            response_data = make_server_request(
+                multiplayer['socket'], multiplayer_data[multiplayer['role']])
             if multiplayer['role'] == 'host':
                 snake_client.pside = response_data.get('snake_pside')
             else:
@@ -377,7 +375,21 @@ class Game():
                 apple.coordinates = response_data.get('apple_coords')
                 active_settings['apple_big'] = response_data.get('apple_big')
 
-        
+        def break_multiplayer_connection():
+            multiplayer['socket'].close()
+            if multiplayer['role'] == 'host':
+                multiplayer['server'].stop()
+
+        def quit_game():
+            nonlocal running
+            nonlocal current_speed
+
+            running = False
+            current_speed = active_settings['speed']
+
+            if multiplayer:
+                break_multiplayer_connection()
+
         apple = Apple()
 
         while running:
@@ -386,8 +398,7 @@ class Game():
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
-                    current_speed = active_settings['speed']
+                    quit_game()
 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
@@ -402,7 +413,10 @@ class Game():
             # кадров в секунду 30, но змейка будет двигаться каждый 5й кадр
             if snake_host.kadr % current_speed == 0:
                 if multiplayer:
-                    make_multiplayer_data_exchange()
+                    try:
+                        make_multiplayer_data_exchange()
+                    except:
+                        quit_game()
 
                 snake_host.apply_side_edit()
                 snake_client.apply_side_edit()
@@ -415,7 +429,8 @@ class Game():
                 elif snake_host.snake_crush_check(test=True) and snake_client.snake_crush_check(test=True):
                     pass
                 snake_host.show_score(20, 10)
-                snake_client.show_score(active_settings['arena_size'][0] - 40, 10)
+                snake_client.show_score(
+                    active_settings['arena_size'][0] - 40, 10)
                 if not snake_host.score_winner_check():
                     snake_client.score_winner_check()
 
@@ -432,6 +447,12 @@ class Game():
                             i.score += i.apple_eat_check()
                             del apple
                             apple = Apple()
+                
+                if multiplayer:
+                    try:
+                        make_multiplayer_data_exchange()
+                    except:
+                        quit_game()
 
                 apple.draw_apple()
                 pygame.display.flip()
