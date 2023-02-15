@@ -153,6 +153,11 @@ class Game():
                         return self.gameover(type='score')
 
             def gameover(self, type, no_winner=False):
+                if multiplayer:
+                    global mp_restart
+                    print("Рестарт разрешен")
+                    mp_restart = True
+
                 nonlocal current_speed
 
                 # окно будет обновляться каждую 999999999 секунду, то есть зависнет (типа конец игры)
@@ -299,6 +304,8 @@ class Game():
         game_paused = False
 
         def pause_switch():  # ставим паузу
+            if multiplayer:
+                return 0
 
             nonlocal screen
             nonlocal game_paused
@@ -311,6 +318,13 @@ class Game():
                 game_paused = False
 
         def restart_game():
+            global mp_restart
+
+            if multiplayer:
+                if mp_restart:
+                    print('должен произойти рестарт')
+                else:
+                    return 0
 
 
             nonlocal snake_host
@@ -330,6 +344,12 @@ class Game():
 
             current_speed = active_settings['speed']
 
+            if multiplayer:
+                mp_restart = False
+
+
+        if multiplayer:
+            mp_restart = False
         def make_multiplayer_data_exchange():
             multiplayer_data = {
                 'host': 
