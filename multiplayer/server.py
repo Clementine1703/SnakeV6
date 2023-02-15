@@ -4,14 +4,16 @@ import threading
 
 class Server():
     def __init__(self):
-        threading.Thread(target=self.run).start()
+        self.threading = threading.Thread(target=self.run)
+        self.threading.start()
+        self.threading_work = True
     def run(self):
         global socket
-        socket = socket.socket()
-        socket.bind(('', 12341))
-        socket.listen(1)
-        connect_host, addres_host = socket.accept()
-        connect_client, addres_client = socket.accept()
+        server_socket = socket.socket()
+        server_socket.bind(('', 12341))
+        server_socket.listen(1)
+        connect_host, addres_host = server_socket.accept()
+        connect_client, addres_client = server_socket.accept()
 
         print(
         f'''
@@ -26,7 +28,7 @@ class Server():
         game_configurations = connect_host.recv(1024)
         connect_client.send(game_configurations)
 
-        while True:
+        while self.threading_work:
             data = connect_host.recv(1024)
             if not data:
                 break
@@ -54,6 +56,11 @@ class Server():
 
             connect_host.send(pickle.dumps(data_for_host))
             connect_client.send(pickle.dumps(data_for_client))
+
+        server_socket.close()
+
+    def stop(self):
+        self.threading_work = False
 
 if __name__ == '__main__':
     Server()

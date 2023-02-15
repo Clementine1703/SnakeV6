@@ -1,11 +1,13 @@
 import pickle
 import socket
+import threading
 import tkinter as tk
 from functools import partial
 from tkinter.ttk import *
 from multiplayer import server, utils
 from form_tools.form_constructors import create_button, create_checkbutton, create_combobox
 from form_tools.form_synchronizators import syncing_setting_with_input
+import time
 
 from settings import *
 from game import Game
@@ -100,15 +102,6 @@ class Menu(tk.Tk):
                 function= partial(self.connect_to_host, ip_input.get()),
         )
 
-        ip_list_area = tk.Text(multiplayer ,width=25, height=5, bg="white",
-            fg='black')
-        ip_list_area.pack()
-
-
-        ip_list = utils.get_ip_list()
-        if type(ip_list) == list:
-            ip_list_area.insert("1.0", f'ip адресы: \n{ip_list}')
-
         
         create_button(
                 menu= self,
@@ -119,16 +112,16 @@ class Menu(tk.Tk):
         )
 
     def connect_to_host(self, ip_address):
-        sock = socket.socket()
-        sock.connect((ip_address, 12341))
+        socket_client = socket.socket()
+        socket_client.connect((ip_address, 12341))
         print('connected')
 
-        data = sock.recv(1024)
+        data =  socket_client.recv(1024)
         if not data:
                 pass
         data = pickle.loads(data)
         if (data['command'] == 'start'):
-            data = sock.recv(1024)
+            data = socket_client.recv(1024)
             if not data:
                 pass
             data = pickle.loads(data)
@@ -138,7 +131,7 @@ class Menu(tk.Tk):
             active_settings = data
             Game.start(active_settings, multiplayer = {
                 'role': 'client',
-                'socket': sock,
+                'socket': socket_client,
             })
 
     def open_wait_for_connection_window(self):
@@ -147,25 +140,33 @@ class Menu(tk.Tk):
         wait_for_connection.title('Ожидание 2-го игрока')
         wait_for_connection.resizable(width=False, height=False)
 
-        ip_show_lbl = Label(wait_for_connection, text=utils.get_my_ip())
+        my_ip = utils.get_my_ip()
+
+        ip_show_lbl = Label(wait_for_connection, text=my_ip)
         ip_show_lbl.pack(padx=8, pady= 8)
 
-        server.Server()
 
-        sock = socket.socket()
-        sock.connect(('127.0.0.1', 12341))
+        exchanger_server = server.Server()
+
+        socket_host = socket.socket()
+        socket_host.connect(('127.0.0.1', 12341))
         print('connected')
 
-        data = sock.recv(1024)
-        if not data:
+
+        def wait_connection():
+            data = socket_host.recv(1024)
+            if not data:
                 pass
-        data = pickle.loads(data)
-        if (data['command'] == 'start'):
-            sock.send(pickle.dumps(active_settings))
-            Game.start(active_settings, multiplayer = {
-                'role': 'host',
-                'socket': sock,
-            })
+            data = pickle.loads(data)
+            if (data['command'] == 'start'):
+                socket_host.send(pickle.dumps(active_settings))
+                Game.start(active_settings, multiplayer = {
+                    'role': 'host',
+                    'socket': socket_host,
+                    'server': exchanger_server,
+                })
+        threading.Thread(target=wait_connection).start()
+        
 
         
 
