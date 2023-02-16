@@ -9,11 +9,11 @@ class Server():
         self.threading_work = True
     def run(self):
         global socket
-        server_socket = socket.socket()
-        server_socket.bind(('', 8887))
-        server_socket.listen(1)
-        connect_host, addres_host = server_socket.accept()
-        connect_client, addres_client = server_socket.accept()
+        socket = socket.socket()
+        socket.bind(('', 12341))
+        socket.listen(1)
+        connect_host, addres_host = socket.accept()
+        connect_client, addres_client = socket.accept()
 
         print(
         f'''
@@ -57,7 +57,7 @@ class Server():
             connect_host.send(pickle.dumps(data_for_host))
             connect_client.send(pickle.dumps(data_for_client))
 
-        server_socket.close()
+        socket.close()
 
     def stop(self):
         self.threading_work = False

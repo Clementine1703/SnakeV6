@@ -1,13 +1,11 @@
 import pickle
 import socket
-import threading
 import tkinter as tk
 from functools import partial
 from tkinter.ttk import *
 from multiplayer import server, utils
 from form_tools.form_constructors import create_button, create_checkbutton, create_combobox
 from form_tools.form_synchronizators import syncing_setting_with_input
-import time
 
 from settings import *
 from game import Game
@@ -102,6 +100,7 @@ class Menu(tk.Tk):
                 function= partial(self.connect_to_host, ip_input.get()),
         )
 
+
         
         create_button(
                 menu= self,
@@ -113,7 +112,7 @@ class Menu(tk.Tk):
 
     def connect_to_host(self, ip_address):
         socket_client = socket.socket()
-        socket_client.connect((ip_address, 8887))
+        socket_client.connect((ip_address, 12341))
         print('connected')
 
         data =  socket_client.recv(1024)
@@ -140,33 +139,28 @@ class Menu(tk.Tk):
         wait_for_connection.title('Ожидание 2-го игрока')
         wait_for_connection.resizable(width=False, height=False)
 
-        my_ip = utils.get_my_ip()
+        print(utils.get_my_ip())
 
-        ip_show_lbl = Label(wait_for_connection, text=my_ip)
+        ip_show_lbl = Label(wait_for_connection, text=utils.get_my_ip())
         ip_show_lbl.pack(padx=8, pady= 8)
-
 
         exchanger_server = server.Server()
 
         socket_host = socket.socket()
-        socket_host.connect(('127.0.0.1', 8887))
+        socket_host.connect(('127.0.0.1', 12341))
         print('connected')
 
-
-        def wait_connection():
-            data = socket_host.recv(1024)
-            if not data:
+        data = socket_host.recv(1024)
+        if not data:
                 pass
-            data = pickle.loads(data)
-            if (data['command'] == 'start'):
-                socket_host.send(pickle.dumps(active_settings))
-                Game.start(active_settings, multiplayer = {
-                    'role': 'host',
-                    'socket': socket_host,
-                    'server': exchanger_server,
-                })
-        threading.Thread(target=wait_connection).start()
-        
+        data = pickle.loads(data)
+        if (data['command'] == 'start'):
+            socket_host.send(pickle.dumps(active_settings))
+            Game.start(active_settings, multiplayer = {
+                'role': 'host',
+                'socket': socket_host,
+                'server': exchanger_server,
+            })
 
         
 
