@@ -97,7 +97,7 @@ class Menu(tk.Tk):
                 menu_window= multiplayer,
                 button_name= 'connect_to_host',
                 text= "Подключиться",
-                function= partial(self.connect_to_host, ip_input.get()),
+                function= partial(self.connect_to_host, ip_input),
         )
 
 
@@ -110,10 +110,11 @@ class Menu(tk.Tk):
                 function= self.open_wait_for_connection_window,
         )
 
-    def connect_to_host(self, ip_address):
+    def connect_to_host(self, ip_input):
         socket_client = socket.socket()
+        ip_address = ip_input.get()
         socket_client.connect((ip_address, 12341))
-        print('connected')
+        print(f'connected {ip_address}')
 
         data =  socket_client.recv(1024)
         if not data:
@@ -147,7 +148,7 @@ class Menu(tk.Tk):
         exchanger_server = server.Server()
 
         socket_host = socket.socket()
-        socket_host.connect(('127.0.0.1', 12341))
+        socket_host.connect(('192.168.137.27', 12341))
         print('connected')
 
         data = socket_host.recv(1024)
