@@ -148,7 +148,7 @@ class Menu(tk.Tk):
         exchanger_server = server.Server()
 
         socket_host = socket.socket()
-        socket_host.connect(('192.168.137.27', 12341))
+        socket_host.connect(('localhost', 12341))
         print('connected')
 
         data = socket_host.recv(1024)
