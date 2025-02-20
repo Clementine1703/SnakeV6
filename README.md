@@ -15,3 +15,4 @@ Pygame, Начальное взаимодействие с программой 
 ```python
 pip install -r requirements.txt
 ```
+python -v 3.10.9
